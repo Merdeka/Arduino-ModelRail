@@ -47,6 +47,7 @@ LEDs:
 - top    row - PCA9685 01-08
 - bottom row - PCA9685 09-16
 /************************************************************************************************************/
+#include <EEPROM.h>
 #include <Keypad_MC16.h>
 #include <Keypad.h>
 #include <Wire.h>
@@ -80,6 +81,8 @@ byte buttonColPins[COLS] = {7, 6, 5, 4, 3, 2, 1, 0};   //connect to the column p
 int ADDRESSES[16];
 
 boolean buttonState[16];
+boolean waitForLack;
+uint16_t LackAddress;
 
 //initialize an instance of class NewKeypad
 Keypad_MC16 MarklinKeypad( makeKeymap(hexaKeys), buttonRowPins, buttonColPins, ROWS, COLS, I2CADDR); 
@@ -107,10 +110,29 @@ void setup() {
    bitWrite(address, i, reading);
   }
   address++;
+
+  if(EEPROM.read(0) == address) {
+    Serial.println("Address matches EEPROM");
+  } else {
+    Serial.println("Address Changed");
+    EEPROM.write(0, address);
+  }
   
   // Allocate the Addresses to the Buttons
   for(int i = 0; i < 16; i++) {
     ADDRESSES[i] = (((address - 1) * 16) + (i + 1));
+
+    // Load button states from EEPROM
+    byte state = EEPROM.read(i+16);
+    Serial.println(state);
+    switch(state) {
+      case 0x00:
+      buttonState[i] = 1;
+        break;
+      case 0xFF:
+      buttonState[i] = 0;
+        break;
+    }
   }
   
   // Initialize Keypad
@@ -169,6 +191,8 @@ void setup() {
     }
   
   initLnBuf(&LnTxBuffer);
+
+  getUpdate();
 }
 
 /*****************************************************************************/
@@ -251,7 +275,6 @@ void keypadEvent(KeypadEvent button) {
           Serial.println(" PRESSED");
         }
         LocoNet.requestSwitch(buttonAddress, 1, DIRECTION);
-        Serial.println(buttonAddress);
         processKeypad(button);
         break;
       
@@ -282,13 +305,17 @@ void keypadEvent(KeypadEvent button) {
 void processKeypad(char button) {
   
    int data = (int) button;
+   int e;
+   byte state;
 
-  if (data >=  1 && data <=  8) buttonState[(data -  1)] = 1; 
-  if (data >=  9 && data <= 16) buttonState[(data -  9)] = 0; 
+  if (data >=  1 && data <=  8) { buttonState[(data -  1)] = 1; e = data -  1; state = 0xff; }
+  if (data >=  9 && data <= 16) { buttonState[(data -  9)] = 0; e = data -  9; state = 0x00; }
   
-  if (data >= 17 && data <= 24) buttonState[(data - 9)] = 1; 
-  if (data >= 25 && data <= 32) buttonState[(data - 17)] = 0;
-  
+  if (data >= 17 && data <= 24) { buttonState[(data -  9)] = 1; e = data -  9; state = 0xff; }
+  if (data >= 25 && data <= 32) { buttonState[(data - 17)] = 0; e = data - 17; state = 0x00; }
+
+  e = e+16;
+  EEPROM.write(e, state);
 }
 
 /*****************************************************************************/
@@ -297,7 +324,9 @@ void processKeypad(char button) {
 void getUpdate() {
 
   Serial.println("Look at update sub");
-  
+  for(int i=0;i<16;i++) {
+    LocoNet.requestSwitch(ADDRESSES[i], 0, buttonState[i]);
+  }
 }
 
 /*****************************************************************************/
@@ -308,7 +337,6 @@ void updateLeds() {
   for (int i = 0; i < 16; i++) {
     setLed(i, buttonState[i]);
   }
-  
 }
 
 /*****************************************************************************/
@@ -320,6 +348,28 @@ void setLed(int LED, bool state) {
   } else {
     led.setPWM(LED, 0, 4096);
   }
+}
+
+/*****************************************************************************/
+/*          Called to update Leds                                            */
+/*****************************************************************************/
+void processUpdate( uint16_t Address, uint8_t Direction ) {
+    for(int i = 0; i < 16; i++) {
+      if( Address == ADDRESSES[i] ) {
+        
+        switch (Direction) {
+          case 0x00: // thrown(red)
+            buttonState[i] = 1;
+            break;
+          case 0x20: // closed(green)
+            buttonState[i] = 0;
+            break;
+          default:
+            Serial.println("Unknown");
+            break;
+          }
+      }
+    }
 }
 
 /*****************************************************************************/
@@ -346,22 +396,8 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
     Serial.print(Direction ? "Closed" : "Thrown");
     Serial.print(" - ");
     Serial.println(Output ? "On" : "Off");
-    
-    for(int i = 0; i < 16; i++) {
-      if( Address == ADDRESSES[i] ) {
-        Serial.println(Address);
-        int LED = i;
-        
-        switch (Direction) {
-          case 0x00: // thrown(red)
-            buttonState[LED] = 1;
-            break;
-          case 0x20: // closed(green)
-            buttonState[LED] = 0;
-            break;
-        }
-      }
-    }
+
+    processUpdate(Address, Direction);
 }
 
 /*****************************************************************************/
@@ -390,5 +426,8 @@ void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
     Serial.print(Direction, HEX); //? "Closed" : "Thrown");
     Serial.print(" - ");
     Serial.println(Output ? "On" : "Off");
+
+    waitForLack = 1;
+    LackAddress = Address;
 }
 
