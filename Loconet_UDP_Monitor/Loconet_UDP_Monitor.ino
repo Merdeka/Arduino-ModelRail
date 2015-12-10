@@ -36,7 +36,7 @@
   EthernetClient client;
   
   // Change this to your own network
-  byte ip[] = { 192,168,60,33 };
+  byte ip[] = { 192,168,1,10 };
   
   // Multicast
   IPAddress multicast(224,0,0,1);
@@ -82,16 +82,35 @@ void LoconetRX() {
   
   // Parse and display incoming packets
   int packetSize = Udp.parsePacket();
-  if(packetSize) {
-    
-    char packetBuffer[packetSize];
-    Udp.read(packetBuffer, packetSize);
-    
-    for (int i; i < packetSize; i++) {
-      // Add it to the buffer
-      addByteLnBuf( &LnTxBuffer, packetBuffer[i] & 0xFF );
+
+    if(packetSize) {    
+      char packetBuffer[packetSize]; //buffer to hold incoming packet,
+      
+      Serial.print("Received packet of size ");
+      Serial.print(packetSize);
+      Serial.print(" From: ");
+      IPAddress remote = Udp.remoteIP();
+      for (int i =0; i < 4; i++) {
+        Serial.print(remote[i], DEC);
+        if (i < 3)
+        {
+          Serial.print(".");
+        }
+      }
+      Serial.print(":");
+      Serial.print(Udp.remotePort());
+      Serial.print(" - ");
+  
+      // read the packet into packetBufffer
+      Udp.read(packetBuffer,packetSize);
+  
+      // move it to LnTXBuffer
+      for (int i=0; i < packetSize; i++) {
+        // Add it to the buffer
+        addByteLnBuf( &LnTxBuffer, packetBuffer[i]  & 0xFF);
+      }
+
     }
-    
     // Check to see if we have received a complete packet yet
     LnPacket = recvLnMsg( &LnTxBuffer );
     
@@ -115,7 +134,6 @@ void LoconetRX() {
       if(!LocoNet.processSwitchSensorMessage(LnPacket))
       Serial.println();
     }
-  }
 }
 
 /*************************************************************************/
@@ -183,6 +201,20 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
 void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) {
 
     Serial.print("Switch Report: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction ? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
+}
+
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch Report messages                                            */
+/*****************************************************************************/
+void notifySwitchOutputsReport( uint16_t Address, uint8_t Output, uint8_t Direction ) {
+
+    Serial.print("Switch Outputs Report: ");
     Serial.print(Address, DEC);
     Serial.print(':');
     Serial.print(Direction ? "Closed" : "Thrown");
