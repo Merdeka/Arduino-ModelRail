@@ -114,8 +114,8 @@ void LoconetRX() {
     // Check to see if we have received a complete packet yet
     LnPacket = recvLnMsg( &LnTxBuffer );
     
-    if( LnPacket ) {      
-      
+    if( LnPacket ) {
+
     // First print out the packet in HEX
       Serial.print("Loconet: ");
       uint8_t msgLen = getLnMsgSize(LnPacket); 
