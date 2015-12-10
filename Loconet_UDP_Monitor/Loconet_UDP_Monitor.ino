@@ -1,4 +1,4 @@
-/******************************************************************************
+/************************************************************************************************************
  *
  *  Copyright (C) 2015 Timo Sariwating
  *
@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, If not, see <http://www.gnu.org/licenses/>.
  *
- ******************************************************************************
+ ************************************************************************************************************
   DESCRIPTION:
   This is a LocoNet Packet Monitor
   - It uses Ethernet UDP Multicast using a W5100 Etheret Card.
@@ -24,7 +24,7 @@
   - LocoNet.processSwitchSensorMessage(LnPacket) function and examples
     of each of the notifyXXXXXXX user call-back functions.
 
-******************************************************************************/
+/************************************************************************************************************/
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
@@ -150,47 +150,56 @@ void LoconetTX4Byte (byte type, byte firstbyte, byte secondbyte) {
      }
 }
 
-/*************************************************************************/
-/*          Call-Backs                                                   */
-/*************************************************************************/ 
-  // This call-back function is called from LocoNet.processSwitchSensorMessage
-  // for all Sensor messages
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Sensor messages                                                   */
+/*****************************************************************************/
 void notifySensor( uint16_t Address, uint8_t State ) {
-  Serial.print("Sensor: ");
-  Serial.print(Address, DEC);
-  Serial.print(" - ");
-  Serial.println( State ? "Active" : "Inactive" );
+  
+    Serial.print("Sensor: ");
+    Serial.print(Address, DEC);
+    Serial.print(" - ");
+    Serial.println( State ? "Active" : "Inactive" );
 }
 
-  // This call-back function is called from LocoNet.processSwitchSensorMessage
-  // for all Switch Request messages
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch Request messages                                           */
+/*****************************************************************************/
 void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
-  Serial.print("Switch Request: ");
-  Serial.print(Address, DEC);
-  Serial.print(':');
-  Serial.print(Direction ? "Closed" : "Thrown");
-  Serial.print(" - ");
-  Serial.println(Output ? "On" : "Off");
+
+    Serial.print("Switch Request: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction ? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
 }
 
-  // This call-back function is called from LocoNet.processSwitchSensorMessage
-  // for all Switch Report messages
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch Report messages                                            */
+/*****************************************************************************/
 void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) {
-  Serial.print("Switch Report: ");
-  Serial.print(Address, DEC);
-  Serial.print(':');
-  Serial.print(Direction ? "Closed" : "Thrown");
-  Serial.print(" - ");
-  Serial.println(Output ? "On" : "Off");
+
+    Serial.print("Switch Report: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction ? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
 }
 
-  // This call-back function is called from LocoNet.processSwitchSensorMessage
-  // for all Switch State messages
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch State messages                                             */
+/*****************************************************************************/
 void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
-  Serial.print("Switch State: ");
-  Serial.print(Address, DEC);
-  Serial.print(':');
-  Serial.print(Direction ? "Closed" : "Thrown");
-  Serial.print(" - ");
-  Serial.println(Output ? "On" : "Off");
+
+    Serial.print("Switch State: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction, HEX); //? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
 }

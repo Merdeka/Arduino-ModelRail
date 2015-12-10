@@ -1,4 +1,4 @@
-/******************************************************************************
+/************************************************************************************************************
  *
  *  Copyright (C) 2015 Timo Sariwating
  *
@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, If not, see <http://www.gnu.org/licenses/>.
  *
- ******************************************************************************
+ ************************************************************************************************************
 
 DESCRIPTION:
 This is a Marklin 6040 Keyboard converted to Loconet.
@@ -46,7 +46,7 @@ Address Switch: (On Master)
 LEDs:
 - top    row - PCA9685 01-08
 - bottom row - PCA9685 09-16
-******************************************************************************/
+/************************************************************************************************************/
 #include <Keypad_MC16.h>
 #include <Keypad.h>
 #include <Wire.h>
@@ -91,9 +91,9 @@ byte address = 0;   // Byte to store Address (Only the 4 LSB are used)
 // you can also call it with a different address you want
 Adafruit_PWMServoDriver led = Adafruit_PWMServoDriver(0x43);
 
-/*************************************************************************/
-/*          Setup                                                        */
-/*************************************************************************/ 
+/*****************************************************************************/
+/*          Setup                                                            */
+/*****************************************************************************/
 void setup() {
   
   // start the serial port
@@ -171,9 +171,9 @@ void setup() {
   initLnBuf(&LnTxBuffer);
 }
 
-/*************************************************************************/
-/*          Program Loop                                                 */
-/*************************************************************************/ 
+/*****************************************************************************/
+/*          Program Loop                                                     */
+/*****************************************************************************/
 void loop() {
   
   // Check for any received LocoNet packets
@@ -213,9 +213,9 @@ void loop() {
 }
 
 
-/*************************************************************************/
-/*          Callback functions to Check Keypad                           */
-/*************************************************************************/
+/*****************************************************************************/
+/*          Callback functions to Check Keypad                               */
+/*****************************************************************************/
 void keypadEvent(KeypadEvent button) {
   
   int data = (int) button;
@@ -276,9 +276,9 @@ void keypadEvent(KeypadEvent button) {
     
 }
 
-/*************************************************************************/
-/*          Subroutine to Process Keypad Data                            */
-/*************************************************************************/
+/*****************************************************************************/
+/*          Subroutine to Process Keypad Data                                */
+/*****************************************************************************/
 void processKeypad(char button) {
   
    int data = (int) button;
@@ -291,18 +291,18 @@ void processKeypad(char button) {
   
 }
 
-/***************************************************************************/
-/*          Subroutine to Request Status Update                            */
-/***************************************************************************/
+/*****************************************************************************/
+/*          Subroutine to Request Status Update                              */
+/*****************************************************************************/
 void getUpdate() {
 
   Serial.println("Look at update sub");
   
 }
 
-/*************************************************************************/
-/*          Subroutine to check and set LEDS                             */
-/*************************************************************************/
+/*****************************************************************************/
+/*          Subroutine to check and set LEDS                                 */
+/*****************************************************************************/
 void updateLeds() {
   
   for (int i = 0; i < 16; i++) {
@@ -311,9 +311,9 @@ void updateLeds() {
   
 }
 
-/*************************************************************************/
-/*          Subroutine to switch LED                                     */
-/*************************************************************************/
+/*****************************************************************************/
+/*          Subroutine to switch LED                                         */
+/*****************************************************************************/
 void setLed(int LED, bool state) {
   if (state == true) {
     led.setPWM(LED, 4096, 0);
@@ -322,40 +322,73 @@ void setLed(int LED, bool state) {
   }
 }
 
-/***************************************************************************/
-/*This call-back function is called from LocoNet.processSwitchSensorMessage*/
-/***************************************************************************/
-void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
-{
-
-  for(int i = 0; i < 16; i++) {
-    if( Address == ADDRESSES[i] ) {
-      Serial.println(Address);
-      int LED = i;
-      
-      switch (Direction) {
-        case 0x00: // thrown(red)
-          buttonState[LED] = 1;
-          break;
-        case 0x20: // closed(green)
-          buttonState[LED] = 0;
-          break;
-      }
-    }
-  }
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Sensor messages                                                   */
+/*****************************************************************************/
+void notifySensor( uint16_t Address, uint8_t State ) {
+  
+    Serial.print("Sensor: ");
+    Serial.print(Address, DEC);
+    Serial.print(" - ");
+    Serial.println( State ? "Active" : "Inactive" );
 }
 
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch Request messages                                           */
+/*****************************************************************************/
+void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
 
-/***************************************************************************/
-/*This call-back function is called from LocoNet.processSwitchSensorMessage*/
-/***************************************************************************/
-void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction )
-{
-          Serial.print("Switch State: ");
-          Serial.print(Address, DEC);
-          Serial.print(':');
-          Serial.print(Direction, HEX); //? "Closed" : "Thrown");
-          Serial.print(" - ");
-          Serial.println(Output ? "On" : "Off");
+    Serial.print("Switch Request: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction ? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
+    
+    for(int i = 0; i < 16; i++) {
+      if( Address == ADDRESSES[i] ) {
+        Serial.println(Address);
+        int LED = i;
+        
+        switch (Direction) {
+          case 0x00: // thrown(red)
+            buttonState[LED] = 1;
+            break;
+          case 0x20: // closed(green)
+            buttonState[LED] = 0;
+            break;
+        }
+      }
+    }
+}
+
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch Report messages                                            */
+/*****************************************************************************/
+void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) {
+
+    Serial.print("Switch Report: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction ? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
+}
+
+/*****************************************************************************/
+/* This call-back function is called from LocoNet.processSwitchSensorMessage */
+/* for all Switch State messages                                             */
+/*****************************************************************************/
+void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
+
+    Serial.print("Switch State: ");
+    Serial.print(Address, DEC);
+    Serial.print(':');
+    Serial.print(Direction, HEX); //? "Closed" : "Thrown");
+    Serial.print(" - ");
+    Serial.println(Output ? "On" : "Off");
 }
 
