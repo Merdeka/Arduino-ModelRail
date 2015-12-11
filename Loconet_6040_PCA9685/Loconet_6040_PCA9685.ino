@@ -137,7 +137,7 @@ void setup() {
   // Initialize Keypad
   MarklinKeypad.begin( );
   MarklinKeypad.addEventListener(keypadEvent);
-  MarklinKeypad.setHoldTime(500);
+  MarklinKeypad.setHoldTime(1000);
   MarklinKeypad.setDebounceTime(100);
 
   // Initialize the LED Driver
@@ -342,7 +342,7 @@ void updateLeds() {
 /*****************************************************************************/
 void setLed(int LED, bool state) {
   if (state == true) {
-    led.setPWM(LED, 4096, 0);
+    led.setPWM(LED, 0, 150);
   } else {
     led.setPWM(LED, 0, 4096);
   }
