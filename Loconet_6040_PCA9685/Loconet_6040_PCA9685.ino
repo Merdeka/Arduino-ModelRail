@@ -124,7 +124,6 @@ void setup() {
 
     // Load button states from EEPROM
     byte state = EEPROM.read(i+16);
-    Serial.println(state);
     switch(state) {
       case 0x00:
       buttonState[i] = 1;
@@ -206,7 +205,7 @@ void loop() {
   {
     // Request status on GLOBAL power ON request 0x83
     if ( LnPacket -> data[0] == OPC_GPON ) {
-      getUpdate();
+      //getUpdate();
     }
     
     // First print out the packet in HEX
@@ -322,8 +321,7 @@ void processKeypad(char button) {
 /*          Subroutine to Request Status Update                              */
 /*****************************************************************************/
 void getUpdate() {
-
-  Serial.println("Look at update sub");
+  
   for(int i=0;i<16;i++) {
     LocoNet.requestSwitch(ADDRESSES[i], 0, buttonState[i]);
   }
