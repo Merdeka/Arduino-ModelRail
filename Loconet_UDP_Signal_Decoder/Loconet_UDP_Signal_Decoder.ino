@@ -22,12 +22,23 @@
 
   Demonstrates the use of the:
   - LocoNet.processSwitchSensorMessage(LnPacket) function to switch signals
+  - Using WS2812b as simple signals witch Adafruit NeoPixel library
+
+  In this example 4 WS2812b are combined into two DB Ausfahrsignals. It uses two addresses per signal always
+  starting from the odd/uneven address.
+  Addr1 Aaddr2| Aspect | Signalbegriff
+  ------------------------------------
+  R    - R | 00 | HP0 -> RED/RED
+  G    - R | 01 | HP1 -> GREEN
+  R    - G | 02 | HP2 -> GREEN/YELLOW
+  G    - G | 03 | SH1 -> RED/WHITE
 
 /************************************************************************************************************/
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 #include <LocoNet.h>
+#include <Adafruit_NeoPixel.h>
 
 // Ethernet
   // The MAC address of your Ethernet board (or Ethernet Shield) is located on the back of the circuit board.
@@ -45,13 +56,23 @@
   EthernetUDP Udp;
 
 // Loconet
-static   LnBuf        LnTxBuffer;
-static   lnMsg        *LnPacket;
+  static   LnBuf        LnTxBuffer;
+  static   lnMsg        *LnPacket;
+  
+  uint16_t signalStartAddress[] = { 1, 17 };
+  uint8_t numberOfSignals = sizeof(signalStartAddress) / 2;
+  
+  byte signalState[sizeof(signalStartAddress) / 2];
 
-int signalStartAddress[] = { 1, 3 };
-int numberOfSignals = sizeof(signalStartAddress) / 2;
+// WS2812b
+  // Which pin on the Arduino is connected to the NeoPixels?
+  #define PIN            6
 
-byte signalState[sizeof(signalStartAddress) / 2];
+  // How many NeoPixels are attached to the Arduino?
+  #define NUMPIXELS      4
+
+  // When we setup the NeoPixel library, we tell it how many pixels, and which pin to use to send signals.
+  Adafruit_NeoPixel Signals = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 /*************************************************************************/
 /*          Setup                                                        */
@@ -64,6 +85,9 @@ void setup() {
   
   // Initialize a LocoNet packet buffer to buffer bytes from the PC 
   initLnBuf(&LnTxBuffer);
+
+  Signals.begin(); // This initializes the NeoPixel library.
+  Signals.setBrightness(32);
 
   // Configure the serial port for 57600 baud
   Serial.begin(57600);
@@ -80,12 +104,74 @@ void setup() {
 }
 
 /*************************************************************************/
-/*          Program Loop                                                 */
+/*          Update Signal and send to appropriate signal tech            */
 /*************************************************************************/ 
-void loop() {
+void updateSignal(uint16_t Signal, uint8_t signalState) {
 
-  // Check for any received LocoNet packets
-  LoconetRX();
+      Serial.print("Signal ");
+      Serial.print(Signal + 1);
+      Serial.print(": Address ");
+      Serial.print(signalStartAddress[Signal]);
+      Serial.print("-");
+      Serial.print(signalStartAddress[Signal] + 1);
+      Serial.print(" State ");
+
+      switch (signalState) {
+      case 0x00:
+        Serial.println("0->RED");
+        break;
+      case 0x01:
+        Serial.println("1->GREEN");
+        break;
+      case 0x02:
+        Serial.println("2->YELLOW");
+        break;
+      case 0x03:
+        Serial.println("3->WHITE");
+        break;
+    }
+    updateWS282bSignal(signalStartAddress[Signal], signalState);
+}
+
+
+/*************************************************************************/
+/*          Set WS2812b Signal to Aspect                                 */
+/*************************************************************************/ 
+void updateWS282bSignal(uint16_t Address, uint8_t State) {
+
+  for(int i=0;i<numberOfSignals;i++) {
+    
+    if(Address == signalStartAddress[i]) {
+      Serial.print("Signal: ");
+      Serial.print(Address);
+      Serial.print(":");
+      Serial.print(i);
+      Serial.print(" -> ");
+      Serial.println(State);
+
+      int c = i*2;
+  
+       switch (State) {
+        case 0: //RED
+          Signals.setPixelColor(c    , Signals.Color(255,   0,   0));
+          Signals.setPixelColor(c + 1, Signals.Color(255,   0,   0));
+          break;
+        case 1: //GREEN
+          Signals.setPixelColor(c    , Signals.Color(  0, 150,   0));
+          Signals.setPixelColor(c + 1, Signals.Color(  0,   0,   0));
+          break;
+        case 2: //YELLOW
+          Signals.setPixelColor(c    , Signals.Color(  0, 150,   0));
+          Signals.setPixelColor(c + 1, Signals.Color(255, 190,   0));
+          break;
+        case 3: //WHITE
+          Signals.setPixelColor(c    , Signals.Color(255,   0,   0));
+          Signals.setPixelColor(c + 1, Signals.Color(255, 255, 255));
+          break;
+      }
+      Signals.show(); // Send update to WS2812b
+    }
+  }
 }
 
 /*************************************************************************/
@@ -149,6 +235,15 @@ void LoconetRX() {
     }
 }
 
+/*************************************************************************/
+/*          Program Loop                                                 */
+/*************************************************************************/ 
+void loop() {
+
+  // Check for any received LocoNet packets
+  LoconetRX();
+}
+
 /*****************************************************************************/
 /* This call-back function is called from LocoNet.processSwitchSensorMessage */
 /* for all Sensor messages                                                   */
@@ -199,33 +294,6 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
       }
     }
 
-}
-
-void updateSignal(int Signal, uint8_t signalState) {
-
-      Serial.print("Signal ");
-      Serial.print(Signal + 1);
-      Serial.print(": Address ");
-      Serial.print(signalStartAddress[Signal]);
-      Serial.print("-");
-      Serial.print(signalStartAddress[Signal] + 1);
-      Serial.print(" State ");
-
-      switch (signalState) {
-      case 0x00:
-        Serial.println("0->RED");
-        break;
-      case 0x01:
-        Serial.println("1->GREEN");
-        break;
-      case 0x02:
-        Serial.println("2->YELLOW");
-        break;
-      case 0x03:
-        Serial.println("3->WHITE");
-        break;
-    }
-  
 }
 
 /*****************************************************************************/
