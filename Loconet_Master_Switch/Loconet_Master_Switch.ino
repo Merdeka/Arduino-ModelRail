@@ -1,7 +1,7 @@
 /************************************************************************************************************
  *
- *  Copyright (C) 2015 Timo Sariwating
- Edit by Septillion (Timo Engelgeer) January 2, 2016
+ *  Copyright (C) 2015-2016 Timo Sariwating
+ *  Edit by Septillion (Timo Engelgeer) January 2, 2016
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,9 +28,10 @@ Loconet:
 You MUST connect the RX input to the AVR ICP pin which on an Arduino UNO is digital pin 8.
 The TX output can be any Arduino pin, but the LocoNet library defaults to digital pin 6 for TX
 
-Librarie:
-Uses the Bounce2 library. This needs to be installed in order to compile.
+Libraries:
+Uses the Bounce2 an Loconet libraries. They need to be installed in order to compile.
 Bounce2: https://github.com/thomasfredericks/Bounce2
+Loconet: https://github.com/mrrwa/LocoNet
 
 /************************************************************************************************************/
 #include <LocoNet.h>
@@ -65,8 +66,8 @@ void setup() {
   buttonGreen.attach(GreenButtonPin, INPUT_PULLUP);
   
   // Set up the outputs
-  pinMode(REDLED, OUTPUT);
-  pinMode(GREENLED, OUTPUT);
+  pinMode(RedLed, OUTPUT);
+  pinMode(GreenLed, OUTPUT);
   
   // Initialize the LocoNet interface
   LocoNet.init(LOCONET_TX_PIN); // The TX output in LocoNet library defaults to digital pin 6 for TX
