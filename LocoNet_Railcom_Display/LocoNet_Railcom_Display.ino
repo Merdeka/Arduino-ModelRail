@@ -111,11 +111,11 @@ void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for OPC_MULTI_SENSE 0xD0
-void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Direction ) {
+void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Present ) {
   Serial.print("Railcom Sensor ");
   Serial.print(Address);
   Serial.print(" reports ");
-  Serial.print(Direction? "present" : "absent");
+  Serial.print(Present? "present" : "absent");
   Serial.print(" of decoder address ");
   Serial.print(LocoAddress, DEC);
   Serial.print(" in zone ");
@@ -123,7 +123,7 @@ void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoA
 
   String line1 = "Decoder ";
   line1 = line1 + LocoAddress;
-  String line2 = Direction ? "present" : "absent";
+  String line2 = Present ? "present" : "absent";
   line2 = line2 + " zone " + Address;
 
   lcdPrint(line1, line2);
