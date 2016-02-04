@@ -1,6 +1,6 @@
 # LocoNet Servo Decoder using an Arduino and PCA9685
 
-Settings are stored in EEProm and It can be programmed using LocoNet LNCV using article number 50010
+Settings are stored in EEPROM and It can be programmed using LocoNet LNCV using article number 50010
 
 | LNCV |	Description |
 | ---- | ------------- |
