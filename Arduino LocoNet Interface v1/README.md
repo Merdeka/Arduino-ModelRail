@@ -1,1 +1,1 @@
-# PCB Schematics for all kinds of LocoNet and DCC devices using an Arduino
+# Arduino Nano LocoNet Interface v1
